@@ -44,6 +44,8 @@ function change_the_doc(doc, to_txn) {
 }
 ```
 
+See more [examples](./blob/master/examples) in the code.
+
 <a name="api"></a>
 ## API
 
@@ -84,7 +86,8 @@ The **request_obj** is for Mikeal Rogers's [request][req] module. (Txn uses *req
 * **create** | If `true`, missing documents are considered empty objects, `{}`, passed to the operation. If `false`, missing documents are considered errors, passed to the callback. Newly-created objects will not have a `_rev` field.
 * **timestamps** | Automatically add an `updated_at` field when storing. Default: `true`
 * **max_tries** | How many times to run the fetch/operation/store cycle before giving up. An MVCC conflict triggers a retry. Default: `5`
-* **delay** | Milliseconds to wait before retrying after a conflict. Each retry doubles the wait time. Default = `100`
+* **after** | Milliseconds to postpone the *initial* fetch. (Picking a random value is a good way to load-balance job consumers). Default = `null` i.e. run immediately
+* **delay** | Milliseconds to wait before *retrying* after a conflict. Each retry doubles the wait time. Default = `100`
 * **timeout** | Milliseconds to wait for the **operation** to finish. Default = `15000` (15 seconds)
 * **log** | Logger object to use. Default is a log4js logger named `txn`.
 * **log_level** | Log level cutoff. Default = `info`

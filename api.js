@@ -14,4 +14,4 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-var api = require('./lib/txn').defaults({});
+module.exports = require('./lib/txn');
