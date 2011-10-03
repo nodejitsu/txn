@@ -44,8 +44,6 @@ function change_the_doc(doc, to_txn) {
 }
 ```
 
-See more [examples](./blob/master/examples) in the code.
-
 <a name="api"></a>
 ## API
 
