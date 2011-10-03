@@ -1,19 +1,21 @@
-{ "name": "txn_couchdb"
+{ "name": "txn"
 , "version": "0.1.0"
 , "author": { "name": "Jason Smith"
-            , "email": "jhs@iriscouch.com" }
-, "description": "CouchDB transactions: All-or-nothing data processing and updating"
-, "homepage": "http://github.com/iriscouch/txn_couchdb"
+            , "email": "jhs@iriscouch.com"
+            , "url" : "http://www.iriscouch.com/"
+            }
+, "description": "Process and update CouchDB data in atomic, all-or-nothing transactions"
+, "tags"       : ["couchdb", "transaction", "transactions"]
+
+, "homepage": "http://github.com/iriscouch/txn"
 , "repository": { "type": "git"
-                , "url": "git://github.com/iriscouch/txn_couchdb" }
+                , "url": "git://github.com/iriscouch/txn" }
 
 , "engines": [ "node" ]
-, "preferGlobal": true
 
 , "dependencies" : { "request" : "2.1.1"
                    , "log4js"  : "0.3.9"
                    , "obj_diff": "0.1.0"
                    }
 , "main": "api.js"
-, "bin": {"txn_couchdb": "./bin/cli.js"}
 }
