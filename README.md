@@ -11,7 +11,7 @@ Txn **guarantees** that data modifications either *commit* completely, or *roll 
 1. Write a simple, clear *operation* function to process a chunk of data (Javascript object)
 1. Other parts of the program trigger the operation for various objects with various IDs.
 1. Operations might accidently run *multiple times*, even *concurrently*, perhaps behaving *unpredictably*, probably *timing out* when web sites go down. In other words, it is working within the real world.
-1. No matter. Transaction ensures that, for a given object ID, changes update atomically, persist consistently, run in isolation, and commit durably (ACID guarantees).
+1. No matter. Transaction ensures that, for a given object ID, changes are atomic, consistent, isolated, and durable (ACID guarantees).
 
 ## Example: account signup
 
@@ -88,17 +88,137 @@ function process_signup(doc, to_txn) {
 }
 ```
 
+<a name="api"></a>
+## API
+
+### Setting default options
+
+To make things simple, Transaction allows setting defaults which will apply to all operations. You can even set defaults based on previous defaults.
+
+```javascript
+// Global defaults for everything.
+var txn = require('txn').defaults({"timestamps":false, "couch":"http://localhost:5984"});
+
+// Specific defaults for different databases. (timestamps and couch from above still apply.)
+var user_txn = txn.defaults({"db":"users", "delay":1000, "timeout":45000});
+var jobs_txn = txn.defaults({"db":"jobs" , "delay":100 , "create": true});
+
+// Now things look much better.
+user_txn({id:"bob"}, do_user, on_user_txn);
+jobs_txn({id:"cleanup"}, do_job, on_job_txn);
+```
+
+### Basic idea
+
+Transaction helps you *fetch, modify, then store* some JSON. It has a simple call signature, and you can set temporary or permanent defaults (see below).
+
+txn(**request_obj**, **operation_func**, **txn_callback_func**)
+
+### request_obj
+
+The **request_obj** is for Mikeal Rogers's [request][req] module. (Txn uses *request* internally.) Txn supports some additional optional fields in this object.
+
+* Mandatory: Some location of the data. Everything else is optional.
+  * *either* **uri** | Location to GET the data and PUT it back. Example: `"https://me:secret@example.iriscouch.com/my_db/my_doc"`
+  * *or* broken into parts:
+     * **couch** | URI of the CouchDB server. Example: `"https://me:secret@example.iriscouch.com"`
+     * **db** | Name of the Couch database. Example: `"my_db"`
+     * **id** | ID of the Couch document. Example: `"my_doc"`
+* **doc** | Skip the first fetch and treat this as the initial data (e.g. if you already know it from a `_changes` feed). The `._id` value can substitute for **id** above. On a conflict, Txn will properly fetch the document as usual.
+* **create** | If `true`, missing documents are considered empty objects, `{}`, passed to the operation. If `false`, missing documents are considered errors, passed to the callback. Newly-created objects will not have a `_rev` field.
+* **timestamps** | Automatically add an `updated_at` field when storing. Default: `true`
+* **max_tries** | How many times to run the fetch/operation/store cycle before giving up. An MVCC conflict triggers a retry. Default: `5`
+* **delay** | Milliseconds to wait before retrying after a conflict. Each retry doubles the wait time. Default = `100`
+* **timeout** | Milliseconds to wait for the **operation** to finish. Default = `15000` (15 seconds)
+* **log** | Logger object to use. Default is a log4js logger named `txn`.
+* **log_level** | Log level cutoff. Default = `info`
+
+For example:
+
+```javascript
+{ uri       : "https://me:secret@example.iriscouch.com/_users/org.couchdb.user:bob"
+, create    : true          // Use missing doc IDs to create new docs
+, timestamps: false         // No changes that I didn't make, thank you!
+, timeout   : 5 * 60 * 1000 // Five minutes before assuming the operation failed.
+, log_level : "debug"       // Detailed output of what's going on
+}
+```
+
+### operation_func
+
+This is your primary *worker function* to receive, react-to, and modify the data object. **Txn will wrap this function in fetch/store requests.** If there is an MVCC conflict, **Txn will fetch again, re-run this function, and store again**. If you give this function a name, it will be reflected in Txn's logs. So make it count!
+
+The function receives two parameters.
+
+1. The fetched JSON object, often called **doc**
+2. A callback to return processing to Txn, oten called **to_txn**. The callback takes two parameters:
+  1. An error object
+  2. An optional *replacement object*. If provided, modifications to **doc** are ignored and this object is used instead.
+
+```javascript
+function make_a_contestant(user, to_txn) {
+  if(! user._rev) {
+    // Creating a user.
+    user.type = "user";
+    user.name = "bob";
+    user.roles = [];
+  }
+
+  // Demonstrate sending an Error to the transaction callback function.
+  if(require("os").hostname() == "staging")
+    return to_txn(new Error("Making contestants may not run on the staging server"));
+
+  // People named Joe may not play. Demonstrates sending a replacement object.
+  if(user.name == "joe")
+    return to_txn(null, {"_deleted": true});
+
+  user.roles.push("contestant");
+  if(Math.random() < 0.5)
+    user.roles.push("red_team");
+  else
+    user.roles.push("blue_team");
+
+  return to_txn();
+}
+```
+
+Note, Txn automatically sets the `_id` and `_rev` fields. The operation function needn't bother.
+
+### txn_callback_func
+
+When Txn is all done, it will run your final callback function with the results.
+
+The callback function receives two parameters:
+
+1. An error object, either from Txn (e.g. too many conflicts, operation timeout, HTTP error) or the one sent by *operation_func*. Txn will set various fields depending on the type of error.
+  * `timeout` if the operation function timed out.
+  * `conflict` and `tries` if there was an MVCC conflict and the number of retries was exhausted
+2. The final committed object.
+3. A transaction object with information about the process. Useful fields:
+  * `tries`: The number of tries the entire run took (`1` means the operation worked on the first try)
+  * `name`: The name of this transaction (your operation function name)
+
+```javascript
+function after_txn(error, doc, txn_obj) {
+  if(error) {
+    console.error("Failed to run transaction after " + txn_obj.tries + " attempts");
+    throw error;
+  }
+
+  console.log("Transaction success: " + doc._id);
+
+  // Application code continues.
+}
+```
+
 ## Considerations
 
 Transaction is great for job processing, from a CouchDB `_changes` feed for example. Unfortunately, jobs are for *doing stuf* (create an account, save a file, send a tweet) and the useful "stuff" are all side-effects. But Txn only provides atomic *data*. It cannot roll-back side-effects your own code made.
 
 Thus the best Txn functions are [reentrant][reent]: At any time, for any reason, a txn function might begin executing anew, concurrent to the original execution, perhaps with the same input parameters or perhaps with different ones. Either execution path could finish first. (The race loser will be rolled back and re-executed, this time against the winner's updated data.)
 
-## TODO
-
-* A shortcut where you can supply the doc and txn will not fetch it first. The downside with that is the doc could have totally changed when your function runs so it may be easy to make a mistake.
-
 [app_engine_txn]: http://code.google.com/appengine/docs/python/datastore/transactions.html
 [mvcc]: http://en.wikipedia.org/wiki/Multiversion_concurrency_control
 [reent]: http://en.wikipedia.org/wiki/Reentrancy_(computing)
 [follow]: https://github.com/iriscouch/follow
+[req]: https://github.com/mikeal/request
