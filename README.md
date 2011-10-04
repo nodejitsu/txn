@@ -159,9 +159,9 @@ The callback function receives two parameters:
   * `name`: The name of this transaction (your operation function name)
 
 ```javascript
-function after_txn(error, doc, txn_obj) {
+function after_txn(error, doc, txr) {
   if(error) {
-    console.error("Failed to run transaction after " + txn_obj.tries + " attempts");
+    console.error("Failed to run transaction after " + txr.tries + " attempts");
     throw error;
   }
 
