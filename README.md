@@ -102,7 +102,7 @@ For example:
 ```javascript
 { uri       : "https://me:secret@example.iriscouch.com/_users/org.couchdb.user:bob"
 , create    : true          // Use missing doc IDs to create new docs
-, timestamps: false         // No changes that I didn't make, thank you!
+, timestamps: true          // Automatic created_at and updated_at fields
 , timeout   : 5 * 60 * 1000 // Five minutes before assuming the operation failed.
 , log_level : "debug"       // Detailed output of what's going on
 }
