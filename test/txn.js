@@ -242,6 +242,8 @@ function timestamps(done) {
       assert.equal('undefined', typeof doc.created_at, "Updating existing docs does not add created_at");
       assert.equal('string'   , typeof doc.updated_at, "Update with timestamps");
 
+      state.doc_a = doc;
+
       txn({id:'stamps', create:true, timestamps:true}, setter('val', 10), function(er, doc) {
         if(er) throw er;
 
