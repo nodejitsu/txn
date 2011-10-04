@@ -155,6 +155,25 @@ function pred_copy(src, dst, pred) {
   })
 }
 
+if(! assert.thrown)
+  assert.thrown = function(expected, code, message) {
+    if(typeof expected == 'function' && typeof code == 'string' && typeof message == 'undefined') {
+      message  = code;
+      code     = expected;
+      expected = /./;
+    }
+
+    var exception = null;
+    try       { code()        }
+    catch (e) { exception = e }
+
+    if(!exception)
+      throw new Error("Exception not thrown: " + (message || "assert.thrown"));
+
+    if(!exception.message.match(expected))
+      throw new Error("Exception did not match "+expected+": " + exception.message + "\n > " + message);
+  }
+
 if(! assert.member)
   assert.member = function(elem, list, message) {
     var is_member = false;
@@ -168,7 +187,7 @@ if(! assert.member)
   }
 
 if(! assert.any)
-  assert.any = function(list, message, pred) {
+  assert.any = function(pred, list, message) {
     for(var a = 0; a < list.length; a++)
       if(pred.call(null, list[a]))
         return true;
@@ -176,7 +195,7 @@ if(! assert.any)
   }
 
 if(! assert.none)
-  assert.none = function(list, message, pred) {
+  assert.none = function(pred, list, message) {
     for(var a = 0; a < list.length; a++)
       if(pred.call(null, list[a]))
         throw new Error(message || "assert.none");

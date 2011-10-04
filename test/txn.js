@@ -54,6 +54,23 @@ function plus(X) {
   }
 }
 
+function waitfor(X) {
+  return finisher;
+  function finisher(doc, to_txn) {
+    setTimeout(finish, X);
+    function finish() {
+      return to_txn();
+    }
+  }
+}
+
+function thrower(er) {
+  return thrower;
+  function thrower() {
+    if(er) throw er;
+  }
+}
+
 //
 //
 //
@@ -87,6 +104,9 @@ function setup(done) {
         if(resp.statusCode !== 201 || json.ok !== true)
           throw new Error("Cannot store doc: " + resp.statusCode + ' ' + body);
 
+        body = JSON.parse(body);
+        doc._rev = body.rev;
+        state.doc_a = doc;
         done();
       })
     })
@@ -95,16 +115,90 @@ function setup(done) {
 
 // =-=-=-=-=-=-=-=-=
 
+function required_params(done) {
+  var ID = state.doc_a._id;
+  var orig = state.doc_a.val;
+
+  var noop_ran = false;
+  var noop = function() { noop_ran = true; };
+
+  assert.thrown(function() { TXN({}, noop, noop) }, "Mandatory uri");
+
+  assert.thrown(function() { TXN({couch:COUCH}, noop, noop) }, "Mandatory uri");
+  assert.thrown(function() { TXN({db   :DB   }, noop, noop) }, "Mandatory uri");
+  assert.thrown(function() { TXN({id   :ID   }, noop, noop) }, "Mandatory uri");
+
+  assert.thrown(function() { TXN({couch:COUCH, db:DB}, noop, noop) }, "Mandatory uri");
+  assert.thrown(function() { TXN({couch:COUCH, id:ID}, noop, noop) }, "Mandatory uri");
+  assert.thrown(function() { TXN({db:DB      , id:ID}, noop, noop) }, "Mandatory uri");
+
+  assert.equal(false, noop_ran, "Should never have called noop");
+  assert.equal(orig, state.doc_a.val, "Val should not have been updated");
+
+  done();
+},
+
+function clashing_params(done) {
+  var url = 'http://127.0.0.1:4321/db/doc';
+  var noop_ran = false;
+  var noop = function() { noop_ran = true; };
+
+  var msg = /Clashing/;
+  assert.thrown(msg, function() { TXN({uri:url, couch:COUCH}, noop, noop) }, "Clashing params");
+  assert.thrown(msg, function() { TXN({url:url, couch:COUCH}, noop, noop) }, "Clashing params");
+  assert.thrown(msg, function() { TXN({uri:url, db   :DB   }, noop, noop) }, "Clashing params");
+  assert.thrown(msg, function() { TXN({url:url, id   :'foo'}, noop, noop) }, "Clashing params");
+
+  assert.thrown(msg, function() { TXN({uri:url, couch:COUCH, db:DB, id:'doc_a'}, noop, noop) }, "Clashing params");
+
+  assert.equal(false, noop_ran, "Noop should never run");
+  done();
+},
+
 function update_with_uri(done) {
   var loc = COUCH + '/' + DB + '/doc_a';
   TXN({uri:loc}, plus(3), function(er, doc) {
     if(er) throw er;
-    assert.equal(23 + 3, doc.val, "Update value in doc_a");
+    assert.equal(26, doc.val, "Update value in doc_a");
 
     TXN({url:loc}, plus(6), function(er, doc) {
       if(er) throw er;
-      assert.equal(23 + 3 + 6, doc.val, "Second update value in doc_a");
+      assert.equal(32, doc.val, "Second update value in doc_a");
 
+      state.doc_a = doc;
+      done();
+    })
+  })
+},
+
+function update_with_db(done) {
+  TXN({couch:COUCH, db:DB, id:state.doc_a._id}, plus(-7), function(er, doc) {
+    if(er) throw er;
+
+    assert.equal(25, doc.val, "Update via couch args");
+    done();
+  })
+},
+
+function defaulted_update(done) {
+  txn({id:'doc_a'}, plus(11), function(er, doc) {
+    if(er) throw er;
+
+    assert.equal(36, doc.val, "Defaulted parameters: couch and db");
+
+    state.doc_a = doc;
+    done();
+  })
+},
+
+//{'timeout_coefficient': 5},
+function operation_timeout(done) {
+  var val = state.doc_a.val;
+  txn({id:'doc_a', timeout:200}, waitfor(100), function(er, doc) {
+    if(er) throw er;
+
+    txn({id:'doc_a', timeout:200}, waitfor(300), function(er, doc) {
+      assert.thrown(/timeout/, thrower(er), "Expect a timeout for long operation");
       done();
     })
   })
