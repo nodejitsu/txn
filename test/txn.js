@@ -227,4 +227,33 @@ function create_doc(done) {
   })
 },
 
+function timestamps(done) {
+  txn({id:'doc_a'}, plus(-6), function(er, doc) {
+    if(er) throw er;
+
+    assert.equal(30, doc.val, "Normal update works");
+    assert.equal('undefined', typeof doc.created_at, "Normal update has no timestamps");
+    assert.equal('undefined', typeof doc.updated_at, "Normal update has no timestamps");
+
+    txn({id:'doc_a', timestamps:true}, plus(2), function(er, doc) {
+      if(er) throw er;
+
+      assert.equal(32, doc.val, "Timestamps update works");
+      assert.equal('undefined', typeof doc.created_at, "Updating existing docs does not add created_at");
+      assert.equal('string'   , typeof doc.updated_at, "Update with timestamps");
+
+      txn({id:'stamps', create:true, timestamps:true}, setter('val', 10), function(er, doc) {
+        if(er) throw er;
+
+        assert.equal(10, doc.val, "Timestamps create works");
+        assert.equal('string', typeof doc.created_at, "Create with created_at");
+        assert.equal('string', typeof doc.updated_at, "Create with updated_at");
+        assert.equal(doc.updated_at, doc.created_at, "Creation and update stamps are equal");
+
+        done();
+      })
+    })
+  })
+},
+
 ] // TESTS

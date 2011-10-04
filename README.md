@@ -81,7 +81,7 @@ The **request_obj** is for Mikeal Rogers's [request][req] module. (Txn uses *req
      * **db** | Name of the Couch database. Example: `"my_db"`
      * **id** | ID of the Couch document. Example: `"my_doc"`
 * **create** | If `true`, missing documents are considered empty objects, `{}`, passed to the operation. If `false`, missing documents are considered errors, passed to the callback. Newly-created objects will not have a `_rev` field.
-* **timestamps** | Automatically add an `updated_at` field when storing. Default: `true`
+* **timestamps** | Automatically add an `updated_at` field when updating and `created_at` when creating. Default: `false`
 * **max_tries** | How many times to run the fetch/operation/store cycle before giving up. An MVCC conflict triggers a retry. Default: `5`
 * **delay** | Milliseconds to wait before *retrying* after a conflict. Each retry doubles the wait time. Default = `100`
 * **timeout** | Milliseconds to wait for the **operation** to finish. Default = `15000` (15 seconds)
