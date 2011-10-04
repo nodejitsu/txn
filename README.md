@@ -80,6 +80,7 @@ The **request_obj** is for Mikeal Rogers's [request][req] module. (Txn uses *req
      * **couch** | URI of the CouchDB server. Example: `"https://me:secret@example.iriscouch.com"`
      * **db** | Name of the Couch database. Example: `"my_db"`
      * **id** | ID of the Couch document. Example: `"my_doc"`
+* **create** | If `true`, missing documents are considered empty objects, `{}`, passed to the operation. If `false`, missing documents are considered errors, passed to the callback. Newly-created objects will not have a `_rev` field.
 * **timestamps** | Automatically add an `updated_at` field when storing. Default: `true`
 * **max_tries** | How many times to run the fetch/operation/store cycle before giving up. An MVCC conflict triggers a retry. Default: `5`
 * **delay** | Milliseconds to wait before *retrying* after a conflict. Each retry doubles the wait time. Default = `100`
@@ -90,7 +91,6 @@ The **request_obj** is for Mikeal Rogers's [request][req] module. (Txn uses *req
 These are planned but not implemented yet:
 
 * **doc** | Skip the first fetch and treat this as the initial data (e.g. if you already know it from a `_changes` feed). The `._id` value can substitute for **id** above. On a conflict, Txn will properly fetch the document as usual.
-* **create** | If `true`, missing documents are considered empty objects, `{}`, passed to the operation. If `false`, missing documents are considered errors, passed to the callback. Newly-created objects will not have a `_rev` field.
 * **after** | Milliseconds to postpone the *initial* fetch. (Picking a random value is a good way to load-balance job consumers). Default = `null` i.e. run immediately
 
 For example:

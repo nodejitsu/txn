@@ -54,6 +54,14 @@ function plus(X) {
   }
 }
 
+function setter(K, V) {
+  return set;
+  function set(doc, to_txn) {
+    doc[K] = V;
+    return to_txn();
+  }
+}
+
 function waitfor(X) {
   return finisher;
   function finisher(doc, to_txn) {
@@ -199,6 +207,21 @@ function operation_timeout(done) {
 
     txn({id:'doc_a', timeout:200}, waitfor(300), function(er, doc) {
       assert.thrown(/timeout/, thrower(er), "Expect a timeout for long operation");
+      done();
+    })
+  })
+},
+
+function create_doc(done) {
+  txn({id:'no_create'}, setter('foo', 'nope'), function(er, doc) {
+    assert.thrown(/not_found/, thrower(er), "Error on unknown doc ID");
+    assert.equal(null, doc, "Should not have a doc to work with");
+
+    txn({id:'create_me', create:true}, setter('foo', 'yep'), function(er, doc) {
+      if(er) throw er;
+
+      assert.equal('yep', doc.foo, "Should create doc");
+      assert.equal(3, Object.keys(doc).length, "No unexpected fields in doc create");
       done();
     })
   })
