@@ -258,4 +258,78 @@ function timestamps(done) {
   })
 },
 
+function preloaded_doc_no_conflicts(done) {
+  txn({id:'doc_b', create:true}, setter('type','first'), function(er, doc_b, txr) {
+    if(er) throw er;
+    assert.equal('first', doc_b.type, 'Create doc for preload');
+    assert.equal(1, txr.tries  , 'Takes 1 try for doc update');
+    assert.equal(1, txr.fetches, 'Takes 1 fetch for doc update');
+
+    var ops = 0;
+    function update_b(doc, to_txn) {
+      ops += 1;
+      doc.type = 'preloaded';
+      return to_txn();
+    }
+
+    txn({doc:doc_b}, update_b, function(er, doc, txr) {
+      if(er) throw er;
+
+      assert.equal('preloaded', doc.type, 'Preloaded operation runs normally');
+      assert.equal(1, ops, 'Only one op for preloaded doc without conflicts');
+      assert.equal(1, txr.tries, 'One try for preloaded doc without conflicts');
+      assert.equal(0, txr.fetches, 'No fetches for preloaded doc without conflicts');
+
+      state.doc_b = doc;
+      done();
+    })
+  })
+},
+
+function preloaded_doc_conflicts(done) {
+  var old_rev = state.doc_b._rev;
+  var old_type = state.doc_b.type;
+
+  var old_b = JSON.parse(JSON.stringify(state.doc_b));
+  var new_b = {_id:'doc_b', _rev:old_rev, 'type':'manual update'};
+  var url = COUCH + '/' + DB + '/doc_b';
+  request({method:'PUT', uri:url, json:new_b}, function(er, resp, body) {
+    if(er) throw er;
+
+    // At this point, the new revision is committed but tell Txn to assume otherwise.
+    var new_rev = JSON.parse(body).rev;
+    var new_type = 'manual update';
+
+    var ops = 0;
+    function update_b(doc, to_txn) {
+      ops += 1;
+      assert.ok(ops == 1 || ops == 2, "Should take 2 ops to commit a preload conflict");
+
+      if(ops == 1) {
+        assert.equal(old_rev , doc._rev, "First op should still have old revision");
+        assert.equal(old_type, doc.type, "First op should still have old value");
+      } else {
+        assert.equal(new_rev , doc._rev, "Second op should have new revision");
+        assert.equal(new_type, doc.type, "Second op should have new type");
+      }
+
+      doc.type = 'preload txn';
+      return to_txn();
+    }
+
+    txn({id:'doc_b', doc:old_b}, update_b, function(er, final_b, txr) {
+      if(er) throw er;
+
+      assert.equal(2, ops        , 'Two ops for preloaded txn with conflicts');
+      assert.equal(2, txr.tries  , 'Two tries for preloaded doc with conflicts');
+      assert.equal(1, txr.fetches, 'One fetch for preloaded doc with conflicts');
+
+      assert.equal('preload txn', final_b.type, 'Preloaded operation runs normally');
+
+      state.doc_b = final_b;
+      done();
+    })
+  })
+},
+
 ] // TESTS
