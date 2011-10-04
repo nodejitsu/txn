@@ -332,4 +332,18 @@ function preloaded_doc_conflicts(done) {
   })
 },
 
+function preloaded_doc_creation(done) {
+  var doc = {_id: "preload_create", worked: false};
+
+  txn({doc:doc, create:true}, setter('worked', true), function(er, doc, txr) {
+    if(er) throw er;
+
+    assert.equal(1, txr.tries, "One try to create a doc with preload");
+    assert.equal(0, txr.fetches, "No fetches to create a doc with preload");
+    assert.equal(true, doc.worked, "Operation runs normally for preload create");
+
+    done();
+  })
+},
+
 ] // TESTS
