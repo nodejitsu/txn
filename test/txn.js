@@ -346,4 +346,44 @@ function preloaded_doc_creation(done) {
   })
 },
 
+function after_delay(done) {
+  var set = setter('x', 1);
+  var start, end, duration;
+
+  var num = 0;
+  function doc() {
+    num += 1;
+    return {"_id":"after_"+num};
+  }
+
+  start = new Date;
+  txn({doc:doc(), create:true, after:null}, set, function(er) {
+    if(er) throw er;
+
+    end = new Date;
+    var base_duration = end - start;
+
+    start = new Date;
+    txn({doc:doc(), create:true, after:0}, set, function(er) {
+      if(er) throw er;
+
+      end = new Date;
+      duration = end - start;
+      assert.almost(0.25, base_duration, duration, "after=0 should run immediately");
+
+      start = new Date;
+      txn({doc:doc(), create:true, after:250}, set, function(er) {
+        if(er) throw er;
+
+        end = new Date;
+        duration = end - start;
+        var delay_duration = duration - base_duration;
+        assert.almost(250, delay_duration, "after parameter delays the transaction");
+
+        done();
+      })
+    })
+  })
+},
+
 ] // TESTS

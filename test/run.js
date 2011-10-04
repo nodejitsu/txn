@@ -209,9 +209,24 @@ if(! assert.func)
   }
 
 if(! assert.almost)
-  assert.almost = function(actual, expected, message) {
+  assert.almost = function(margin, expected, actual, message) {
+    if(!message) {
+      message = actual;
+      actual = expected;
+      expected = margin;
+      margin = 0.10;
+    }
+
     var delta = Math.abs(actual - expected);
-    var margin = delta / expected;
-    if(margin > 0.10)
-      throw new Error(message || "assert.almost");
+    var real_margin = delta / expected;
+
+    if(real_margin > margin)
+      throw new Error([ (message || "assert.almost")
+                      , "\n"
+                      , "expected "
+                      , JSON.stringify(expected)
+                      , " (+/- "+(100 * margin)+"%) "
+                      , " got "
+                      , JSON.stringify(actual)
+                      ].join(''));
   }

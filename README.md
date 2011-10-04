@@ -88,14 +88,11 @@ The **request_obj** is for Mikeal Rogers's [request][req] module. (Txn uses *req
   * Not supported by `.defaults()`
 * **timestamps** | Automatically add an `updated_at` field when updating and `created_at` when creating. Default: `false`
 * **max_tries** | How many times to run the fetch/operation/store cycle before giving up. An MVCC conflict triggers a retry. Default: `5`
+* **after** | Milliseconds to postpone the *first* operation. (A random value is a good way to load-balance job consumers). Default: `null` i.e. run immediately
 * **delay** | Milliseconds to wait before *retrying* after a conflict. Each retry doubles the wait time. Default: `100`
 * **timeout** | Milliseconds to wait for the **operation** to finish. Default: `15000` (15 seconds)
 * **log** | Logger object to use. Default is a log4js logger named `txn`.
 * **log_level** | Log level cutoff. Default: `info`
-
-These are planned but not implemented yet:
-
-* **after** | Milliseconds to postpone the *initial* fetch. (Picking a random value is a good way to load-balance job consumers). Default: `null` i.e. run immediately
 
 For example:
 
