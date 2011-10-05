@@ -13,7 +13,8 @@
 
 , "engines": [ "node" ]
 
-, "dependencies" : { "request" : "2.1.1"
+, "dependencies" : { "defaultable": "0.4.0"
+                   , "request" : "2.1.1"
                    , "log4js"  : "0.3.9"
                    , "obj_diff": "0.1.0"
                    }
