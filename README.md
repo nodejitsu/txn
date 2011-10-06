@@ -49,7 +49,7 @@ function change_the_doc(doc, to_txn) {
 
 ### Setting default options
 
-To make things simple, Transaction allows setting defaults which will apply to all operations. You can even set defaults based on previous defaults.
+Transaction uses [Defaultable][def]. You can set defaults which will always apply. You can also set defaults based on previous defaults.
 
 ```javascript
 // Global defaults for everything.
@@ -258,3 +258,4 @@ Thus the best Txn functions are [reentrant][reent]: At any time, for any reason,
 [reent]: http://en.wikipedia.org/wiki/Reentrancy_(computing)
 [follow]: https://github.com/iriscouch/follow
 [req]: https://github.com/mikeal/request
+[def]: https://github.com/iriscouch/defaultable
