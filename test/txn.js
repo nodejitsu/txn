@@ -109,10 +109,9 @@ function setup(done) {
       request({method:'POST', uri:url, json:doc}, function(er, resp, body) {
         if(er) throw er;
 
-        if(resp.statusCode !== 201 || json.ok !== true)
-          throw new Error("Cannot store doc: " + resp.statusCode + ' ' + body);
+        if(resp.statusCode !== 201 || body.ok !== true)
+          throw new Error("Cannot store doc: " + resp.statusCode + ' ' + JSON.stringify(body));
 
-        body = JSON.parse(body);
         doc._rev = body.rev;
         state.doc_a = doc;
         done();
@@ -297,7 +296,7 @@ function preloaded_doc_conflicts(done) {
     if(er) throw er;
 
     // At this point, the new revision is committed but tell Txn to assume otherwise.
-    var new_rev = JSON.parse(body).rev;
+    var new_rev = body.rev;
     var new_type = 'manual update';
 
     var ops = 0;
