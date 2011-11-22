@@ -15,7 +15,7 @@
 
 , "dependencies" : { "defaultable": "0.7.2"
                    , "request" : "2.2.5"
-                   , "log4js"  : "0.3.9"
+                   , "log4js"  : "0.4.0"
                    , "obj_diff": "0.1.0"
                    }
 , "main": "api.js"
