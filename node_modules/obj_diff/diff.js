@@ -183,7 +183,7 @@ function is_equal(a, b) {
       return false;
 
     for(i in a)
-      if(!is_equal(a[k], b[k]))
+      if(!is_equal(a[i], b[i]))
         return false;
 
     return true;
