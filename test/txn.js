@@ -285,6 +285,42 @@ function preloaded_doc_no_conflicts(done) {
   })
 },
 
+function preloaded_doc_with_funny_name(done) {
+  var bulk = {docs: [ {'_id':'this_doc', 'is':'nothing'}, {'_id':'this_doc/has:slashes!youknow?'} ]}
+
+  var req = { method: 'POST'
+            , uri   : COUCH+'/'+DB+'/_bulk_docs'
+            , headers: {'content-type':'application/json'}
+            , body:JSON.stringify(bulk)
+            }
+
+  request(req, function(er, resp, body) {
+    if(er) throw er;
+    request(COUCH + '/' + DB + '/this_doc%2fhas:slashes!youknow%3f', function(er, resp, body) {
+      if(er) throw er;
+      var doc = JSON.parse(body);
+
+      var ops = 0;
+      function update_b(doc, to_txn) {
+        ops += 1;
+        doc.type = 'preloaded slashy';
+        return to_txn();
+      }
+
+      txn({'couch':COUCH, 'db':DB, 'doc':doc}, update_b, function(er, this_doc, txr) {
+        if(er) throw er;
+
+        assert.equal('preloaded slashy', this_doc.type, 'Create doc for preload');
+        assert.equal(1, ops, 'One op for preloaded doc with funny name')
+        assert.equal(1, txr.tries  , 'One try for doc update')
+        assert.equal(0, txr.fetches, 'No fetches for preloaded doc with funny name')
+
+        done()
+      })
+    })
+  })
+},
+
 function preloaded_doc_conflicts(done) {
   var old_rev = state.doc_b._rev;
   var old_type = state.doc_b.type;
