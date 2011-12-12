@@ -404,7 +404,11 @@ function after_delay(done) {
 
       end = new Date;
       duration = end - start;
-      assert.almost(0.25, base_duration, duration, "after=0 should run immediately");
+
+      if(base_duration < 10)
+        assert.ok(duration < 10, 'after=0 should run immediately')
+      else
+        assert.almost(0.25, base_duration, duration, 'after=0 should run immediately (about ' + base_duration + ')');
 
       start = new Date;
       txn({doc:doc(), create:true, after:250}, set, function(er) {
