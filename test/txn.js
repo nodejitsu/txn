@@ -381,6 +381,45 @@ function preloaded_doc_creation(done) {
   })
 },
 
+
+function concurrent_transactions(done) {
+  var doc = { _id:'conc' }
+    , bad_rev = '1-abc'
+
+  request({method:'PUT', uri:COUCH+'/'+DB+'/conc', body:JSON.stringify(doc)}, function(er, res) {
+    if(er) throw er;
+    assert.equal(201, res.statusCode, 'Good conc creation');
+
+    var result = JSON.parse(res.body);
+    assert.notEqual(bad_rev, result.rev, "Make sure "+bad_rev+" isn't the real revision");
+
+    // Looks like this isn't necessary just yet.
+    var _txn = txn.defaults({ 'delay':8, 'request':track_request })
+    _txn({id:'conc'}, setter('done', true), function(er, doc, txr) {
+      if(er) throw er;
+
+      assert.equal(true, doc.done, 'Setter should have worked')
+      assert.equal(txr.tries, 5, 'The faux request wrapper forced this to require many tries')
+
+      done()
+    })
+
+    // Return the same response for the document over and over.
+    var gets = 0;
+    function track_request(req, callback) {
+      if(req.method != 'GET' || ! req.uri.match(/\/conc$/))
+        return request.apply(this, arguments);
+
+      gets += 1;
+      if(gets > 3)
+        return request.apply(this, arguments);
+
+      // Return the same thing over and over to produce many conflicts in a row.
+      return callback(null, {statusCode:200}, JSON.stringify({_id:'conc', _rev:bad_rev}));
+    }
+  })
+},
+
 function after_delay(done) {
   var set = setter('x', 1);
   var start, end, duration;
