@@ -21,6 +21,7 @@ if(process.env.charles)
   COUCH = 'http://localhost:15984';
 
 var TXN = require('../api');
+var TXN_lib = require('../lib/lib')
 
 /*
 if(require.isBrowser) {
@@ -509,6 +510,29 @@ function problematic_doc_ids(done) {
         check_id()
       })
     }
+  }
+},
+
+function couch_errors(done) {
+  var _txn = txn.defaults({'request':req_fail})
+  _txn({'couch':COUCH, 'db':DB, 'id':'error_doc'}, setter('foo', 'bar'), result)
+
+  function req_fail(req, callback) {
+    TXN_lib.req_couch({'method':'PUT', 'uri':COUCH+'/_illegal'}, function(er, res, result) {
+      assert.ok(er, 'Got a req_couch error')
+      assert.equal(er.statusCode, 400, 'HTTP error status embedded in req_couch error')
+      assert.equal(er.error, 'illegal_database_name', 'CouchDB error object embedded in req_couch error')
+
+      return callback(er, res, result)
+    })
+  }
+
+  function result(er, doc, txr) {
+    assert.ok(er, 'Got a txn error')
+    assert.equal(er.statusCode, 400, 'HTTP error status embedded in txn error')
+    assert.equal(er.error, 'illegal_database_name', 'CouchDB error object embedded in txn error')
+
+    done()
   }
 },
 
