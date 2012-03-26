@@ -464,4 +464,52 @@ function after_delay(done) {
   })
 },
 
+function problematic_doc_ids(done) {
+  var tests = [ {'_id':'doc with space'}
+              , 'has space'
+              , 'has!bang'
+              , {'_id':'doc with ! bang'}
+              , 'The "quick" (?) brown หมาจิ้งจอก jumps over the lazy dog!'
+              ]
+  check_id()
+  function check_id() {
+    var check = tests.shift()
+    if(!check)
+      return done()
+
+    if(typeof check == 'string')
+      var opts = {'create':true, 'id':check}
+    else
+      var opts = {'create':true, 'doc':check}
+
+    var id = check._id || check
+    var value = Math.random()
+    txn(opts, make_doc, result)
+
+    function make_doc(doc, to_txn) {
+      assert.equal(doc._id, id, 'Incoming doc ID should be right')
+      doc.key = value
+      return to_txn()
+    }
+
+    function result(er, doc, txr) {
+      if(er) throw er
+      var id_re = encodeURIComponent(id)
+      id_re = id_re.replace(/\(/g, '\\(').replace(/\)/g, '\\)')
+      id_re = new RegExp('/' + id_re + '$')
+      assert.equal(doc._id, id, 'Created doc ID is right')
+      assert.ok(txr.uri.match(id_re), 'Transaction URL uses the right ID')
+
+      var doc_url = COUCH + '/' + DB + '/' + encodeURIComponent(id)
+      request({'url':doc_url, 'json':true}, function(er, res) {
+        if(er) throw er
+        assert.equal(res.statusCode, 200, 'Got the doc with problematic ID: '+JSON.stringify(id))
+        assert.equal(res.body._id, id, 'Doc has the expected id: '+JSON.stringify(id))
+        assert.equal(res.body.key, value, 'Doc has the planted value: '+JSON.stringify(id))
+        check_id()
+      })
+    }
+  }
+},
+
 ] // TESTS
