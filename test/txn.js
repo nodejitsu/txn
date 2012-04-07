@@ -536,4 +536,53 @@ function couch_errors(done) {
   }
 },
 
+{'timeout': 30*1000},
+function avoid_smashing_the_stack(done) {
+  var depth_limit
+  find_limit(1)
+
+  function find_limit(depth) {
+    if(depth > 25000)
+      throw new Error('Cannot find stack depth limit after 25,000 function calls')
+
+    try { find_limit(depth + 1) }
+    catch (er) {
+      depth_limit = depth * 5
+      setTimeout(find_txn_limit, 100)
+    }
+  }
+
+  function find_txn_limit() {
+    assert.ok(depth_limit, 'Depth limit found')
+
+    // The idea is to produce zero i/o so Txn always calls the callback immediately, never allowing the stack to unwind.
+      , no_change = function(doc, to_txn) { return to_txn() }
+      , error = null
+
+    function opts() { return {'couch':COUCH, 'db':DB, 'doc':{'_id':'txn_limit_doc'}, 'timeout':60*1000} }
+
+    //console.log('depth_limit = %d', depth_limit)
+    txn_depth(1)
+    function txn_depth(depth) {
+      if(depth >= depth_limit)
+        return check_results()
+
+      txn(opts(), no_change, function(er) {
+        if(er) throw er;
+        try { txn_depth(depth + 1) } // Try one level deeper.
+        catch (er) {
+          error = er
+          process.nextTick(check_results)
+        }
+      })
+    }
+
+    function check_results() {
+      //if(error) console.error('Error: %s', error.stack)
+      assert.ok(error === null, 'Txn called back deeper than the stack allows')
+      done()
+    }
+  }
+},
+
 ] // TESTS
