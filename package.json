@@ -1,5 +1,5 @@
 { "name": "txn"
-, "version": "0.2.10"
+, "version": "0.2.11"
 , "author": { "name": "Jason Smith"
             , "email": "jhs@iriscouch.com"
             , "url" : "http://www.iriscouch.com/"
