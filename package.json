@@ -19,5 +19,7 @@
                    , "log4js"         : "~0.5.4"
                    , "obj_diff"       : "~0.2.0"
                    }
+, "browser": { "request" : "browser-request"
+             }
 , "main": "api.js"
 }
