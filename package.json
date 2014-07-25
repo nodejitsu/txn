@@ -14,7 +14,7 @@
 , "engines": [ "node" ]
 
 , "dependencies" : { "defaultable"    : "~0.7.2"
-                   , "request"        : "~2.16.6"
+                   , "request"        : "~2.39.0"
                    , "browser-request": "~0.2.1"
                    , "log4js"         : "~0.5.4"
                    , "obj_diff"       : "~0.2.0"
