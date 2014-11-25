@@ -1,5 +1,8 @@
 # Transaction: Javascript ACID objects
 
+[![build
+status](https://secure.travis-ci.org/nodejitsu/txn.png)](http://travis-ci.org/nodejitsu/txn)
+
 Transaction (or *Txn*) is a library to load, modify, and commit Javascript objects in atomic, all-or-nothing operations. It comes from internal Iris Couch tooling, inspired by Google [App Engine transactions][app_engine_txn].
 
 Transaction is great for using CouchDB documents as state machines, moving through a workflow in discrete steps.
