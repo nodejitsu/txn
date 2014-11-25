@@ -1,6 +1,8 @@
 language: node_js
 services:
   - couchdb
+before_install:
+  - curl --location http://git.io/1OcIZA | bash -s
 node_js:
   - "0.8"
   - "0.10"
