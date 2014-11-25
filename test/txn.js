@@ -14,6 +14,7 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
+var tick = typeof global.setImmediate !== 'function' ? process.nextTick : setImmediate;
 var COUCH = process.env.couch || 'http://localhost:5984';
 var DB    = process.env.db    || 'txn_test';
 
@@ -572,7 +573,7 @@ function avoid_smashing_the_stack(done) {
         try { txn_depth(depth + 1) } // Try one level deeper.
         catch (er) {
           error = er
-          process.nextTick(check_results)
+          tick(check_results)
         }
       })
     }
