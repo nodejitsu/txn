@@ -18,10 +18,10 @@
 , "dependencies" : { "defaultable"    : "~0.7.2"
                    , "request"        : "^2.48.0"
                    , "browser-request": "~0.2.1"
-                   , "debug"          : "~0.7.2"
+                   , "debug"          : "^2.1.0"
                    , "obj_diff"       : "~0.2.0"
                    }
-, "devDependencies": { "log4js"         : "~0.5.4"
+, "devDependencies": { "log4js"         : "~0.6.4"
                      }
 , "browser": { "request" : "browser-request"
              }
