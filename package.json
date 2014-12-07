@@ -7,9 +7,9 @@
 , "description": "Process and update CouchDB data in atomic, all-or-nothing transactions"
 , "tags"       : ["couchdb", "transaction", "transactions"]
 
-, "homepage": "http://github.com/iriscouch/txn"
+, "homepage": "http://github.com/nodejitsu/txn"
 , "repository": { "type": "git"
-                , "url": "git://github.com/iriscouch/txn" }
+                , "url": "git://github.com/nodejitsu/txn" }
 
 , "engines": [ "node" ]
 , "scripts": { "test": "node test/run.js"
@@ -26,4 +26,5 @@
 , "browser": { "request" : "browser-request"
              }
 , "main": "api.js"
+, "license": "Apache 2.0"
 }
